@@ -1,5 +1,6 @@
-window.cursorTime = "";
+window.cursorTime;
 window.play;
+
 function formatData(inputObject) {
   var outputX = [];
   var outputY = [];
@@ -76,10 +77,10 @@ $(document).ready(function() {
       $('#play-button').val('Play');
     }
   });
+	
 
-
-
-
+	
+	window.asyncReady = false;
   $.ajax({
     url: "http://autarchserver.westeurope.cloudapp.azure.com:4716/AAProvider/GetTags",
     dataType: "jsonp",
@@ -96,19 +97,18 @@ $(document).ready(function() {
           min2 = element.RangeMin;
         }
       });
-
     }
   });
-
   $.ajax({
     url: "http://autarchserver.westeurope.cloudapp.azure.com:4716/AAProvider/GetSerieValues?tagName=KepSimTestRamp&startTime=1503248050473&endTime=1503248657473&nSamples=100",
     dataType: "jsonp",
     type: "GET",
-    async: false,
     success: function(data) {
       var graphDataEntry = formatData(data);
       graphDataEntry.type = 'scatter';
       graphDataEntry.hoverinfo = 'none';
+	  graphDataEntry.yaxis = 'y';
+	  graphDataEntry.name = 'signal1';
       graphData.push(graphDataEntry);
     }
   });
@@ -116,12 +116,12 @@ $(document).ready(function() {
     url: "http://autarchserver.westeurope.cloudapp.azure.com:4716/AAProvider/GetSerieValues?tagName=A_Random.AM01&startTime=1503248050473&endTime=1503248657473&nSamples=100",
     dataType: "jsonp",
     type: "GET",
-    async: false,
     success: function(data) {
       var graphDataEntry = formatData(data);
       graphDataEntry.type = 'scatter';
       graphDataEntry.hoverinfo = 'none';
       graphDataEntry.yaxis = 'y2';
+	  graphDataEntry.name = 'signal2';
       graphData.push(graphDataEntry);
       var layout = {
         yaxis: {
@@ -144,10 +144,14 @@ $(document).ready(function() {
       };
 
       Plotly.newPlot('graph', graphData, layout, {displayModeBar: false});
-
     }
   });
   var graph = $('#graph');
+  graph.on('plotly_afterplot', function() {
+	window.cursorTime = new Date(graph[0]._fullLayout.xaxis.range[0].replace('-', '/')).getTime();
+	updateCursor();
+	graph.unbind('plotly_afterplot');
+  });
   graph.mousedown(function(data) {
     graph.mousemove(function(data) {
       var canvasContainer = $('.gridlayer')[0];
