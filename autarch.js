@@ -137,7 +137,7 @@ $(document).ready(function() {
         },
         xaxis: {
           autorange: true,
-          rangeslider: {range: ['2017-08-20 16:50', '2017-08-20 17:10']},
+          rangeslider: {range: ['2017/08/20 16:50', '2017/08/20 17:10']},
           type: 'date',
           fixedrange: true
         }
@@ -148,7 +148,7 @@ $(document).ready(function() {
   });
   var graph = $('#graph');
   graph.on('plotly_afterplot', function() {
-	window.cursorTime = new Date(graph[0]._fullLayout.xaxis.range[0].replace('-', '/')).getTime();
+	window.cursorTime = new Date(graph[0]._fullLayout.xaxis.range[0]).getTime();
 	updateCursor();
 	graph.unbind('plotly_afterplot');
   });
@@ -158,8 +158,8 @@ $(document).ready(function() {
       canvasBounds = canvasContainer.getBoundingClientRect();
       var xAxis = this._fullLayout.xaxis;
 
-      var xMin = new Date(xAxis.range[0].replace('-', '/')).getTime();
-      var xMax = new Date(xAxis.range[1].replace('-', '/')).getTime();
+      var xMin = new Date(xAxis.range[0]).getTime();
+      var xMax = new Date(xAxis.range[1]).getTime();
 
       var xScale = (xMax - xMin) / canvasBounds.width;
 
