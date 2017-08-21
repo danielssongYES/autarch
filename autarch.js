@@ -53,21 +53,33 @@ $(document).ready(function() {
   var max2;
   var min2;
   var play;
-$('#player-controls').submit(function(e) {
-  e.preventDefault();
-  if(!window.play) {
-    window.play = setInterval(function() {
-      window.cursorTime += 66;
-      updateCursor();
-    }, 33);
-    $('#play-button').val('Pause');
-  }
-  else {
-    clearInterval(window.play);
-    window.play = null;
-    $('#play-button').val('Play');
-  }
-});
+  var canvas = document.getElementById('canvas');
+  var videoCtx = new VideoContext(canvas);
+  var videoNode1 = videoCtx.video("video.mp4");
+  videoNode1.connect(videoCtx.destination);
+  videoNode1.start(0);
+  videoNode1.stop(20);
+  $('#player-controls').submit(function(e) {
+    e.preventDefault();
+    if(!window.play) {
+      window.play = setInterval(function() {
+        window.cursorTime += 66;
+        updateCursor();
+      }, 33);
+      videoCtx.play();
+      $('#play-button').val('Pause');
+    }
+    else {
+      clearInterval(window.play);
+      window.play = null;
+      videoCtx.pause();
+      $('#play-button').val('Play');
+    }
+  });
+
+
+
+
   $.ajax({
     url: "http://autarchserver.westeurope.cloudapp.azure.com:4716/AAProvider/GetTags",
     dataType: "jsonp",
