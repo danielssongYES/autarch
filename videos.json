@@ -1,0 +1,14 @@
+[
+  {
+    "filename": "video1.mp4",
+    "startTime": 1503241043883,
+    "endTime": 1503241047883,
+    "id": "video1"
+  },
+  {
+    "filename": "video2.mp4",
+    "startTime": 1503241043883,
+    "endTime": 1503241047883,
+    "id": "video2"
+  }
+]
