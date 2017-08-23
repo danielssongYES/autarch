@@ -1,5 +1,41 @@
 window.cursorTime;
 window.play;
+window.videoInfo;
+
+function loadVideoInfo() {
+  $.ajax({
+    type: "GET",
+    dataType: "json",
+    url: "videos.json",
+    success: function(data) {
+      window.videoInfo = data;
+    },
+    beforeSend: function (xhr) {
+      if (xhr && xhr.overrideMimeType) {
+        xhr.overrideMimeType('application/json;charset=utf-8');
+      }
+    }
+  });
+}
+
+function videoToEntry() {
+  var outputX = [];
+  var outputY = [];
+  window.videoInfo.forEach(function(video) {
+    outputX.push(new Date(video.startTime));
+    outputY.push(1);
+    outputX.push(new Date(video.endTime));
+    outputY.push(0);
+  });
+  return {x: outputX, y: outputY};
+}
+
+function spanOverlap(x, y) {
+	if(y.isArray())
+		return !(x[1] < y[0] || x[0] > y[1]);
+	else
+		return !(x[1] < y || x[0] > y);
+}
 
 function formatData(inputObject) {
   var outputX = [];
@@ -15,6 +51,7 @@ function updateCursor() {
   var graph = $('#graph')[0];
   var yRange = graph._fullLayout.yaxis.range;
   var yRange2 = graph._fullLayout.yaxis2.range;
+  var yRange3 = [0, 1];
   Plotly.relayout('graph', {
     shapes: [
       {
@@ -47,6 +84,33 @@ function updateCursor() {
   });
 }
 
+function updateVideos(videos) {
+  //videos.forEach(function(video) {
+  for(video in videos) {
+    if(!spanOverlap([video.data('startTime'), video.data('endTime')],
+    window.cursorTime)) {
+      var src = "";
+      for(i = 0; i < videoInfo.videos.length; i++) {
+        if(spanOverlap([videoInfo.videos[i].startTime, videoInfo.videos[i].endTime], window.cursorTime)
+          && videoInfo.videos[i].id === video.attr('id')) {
+          src = videoInfo.videos[i].filename;
+          break;
+        }
+      }
+      //window.videoInfo.videos.forEach(function(element)
+      for(element in window.videoInfo.videos) {
+        if(spanOverlap([element.startTime, element.endTime], window.cursorTime)
+          && element.id === video.attr('id')) {
+          src = element.filename;
+        }
+      }
+      video.attr('src', src);
+      video.load();
+    }
+    video.currentTime += window.cursorTime - video.data('startTime');
+  }
+}
+
 $(document).ready(function() {
   var graphData = [];
   var max1;
@@ -54,6 +118,7 @@ $(document).ready(function() {
   var max2;
   var min2;
   var play;
+  loadVideoInfo();
   /*var canvas = document.getElementById('canvas');
   var videoCtx = new VideoContext(canvas);
   var videoNode1 = videoCtx.video("video.mp4");
@@ -66,15 +131,10 @@ $(document).ready(function() {
     var playbackRate = 0.2;
     if(!window.play) {
       window.play = setInterval(function() {
-        var video1 = document.getElementById('video1');
-        var video2 = document.getElementById('video2');
         window.cursorTime += (1000 / frameRate) * playbackRate;
         updateCursor();
-        //video.fastSeek(video.currentTime + 0.033);
-        video1.currentTime += (1 / frameRate) * playbackRate;
-        video2.currentTime += (1 / frameRate) * playbackRate;
-        //document.getElementById("video2").fastSeek(currentTime / 1000 + 33);
-      }, (1000 / frameRate) * playbackRate);
+        updateVideos($('video'));
+      }, (1000 / frameRate) / playbackRate);
       //videoCtx.play();
       $('#play-button').val('Pause');
     }
@@ -97,11 +157,11 @@ $(document).ready(function() {
     async: false,
     success: function(data) {
       data.forEach(function(element) {
-        if(element.Name == "KepSimTestRamp") {
+        if(element.Name === "KepSimTestRamp") {
           max1 = element.RangeMax;
           min1 = element.RangeMin;
         }
-        else if(element.Name == "A_Random.AM01") {
+        else if(element.Name === "A_Random.AM01") {
           max2 = element.RangeMax;
           min2 = element.RangeMin;
         }
@@ -116,8 +176,8 @@ $(document).ready(function() {
       var graphDataEntry = formatData(data);
       graphDataEntry.type = 'scatter';
       graphDataEntry.hoverinfo = 'none';
-	  graphDataEntry.yaxis = 'y';
-	  graphDataEntry.name = 'signal1';
+	    graphDataEntry.yaxis = 'y';
+	    graphDataEntry.name = 'signal1';
       graphData.push(graphDataEntry);
     }
   });
@@ -130,21 +190,32 @@ $(document).ready(function() {
       graphDataEntry.type = 'scatter';
       graphDataEntry.hoverinfo = 'none';
       graphDataEntry.yaxis = 'y2';
-	  graphDataEntry.name = 'signal2';
+	    graphDataEntry.name = 'signal2';
+      graphData.push(graphDataEntry);
+      graphDataEntry = videoToEntry();
+      graphDataEntry.type = 'bar';
+      graphDataEntry.yaxis = 'y3';
+      graphDataEntry.name = 'video';
       graphData.push(graphDataEntry);
       var layout = {
         yaxis: {
-          domain: [0, 0.5],
+          domain: [0, 0.4],
           autorange: false,
           fixedrange: true,
           range: [min1, max1]
         },
         legend: {traceorder: 'reversed'},
         yaxis2: {
-          domain: [0.5, 1],
+          domain: [0.4, 0.8],
           autorange: false,
           fixedrange: true,
           range: [min2, max2]
+        },
+        yaxis3: {
+          domain: [0.8, 1.0],
+          autorange: false,
+          fixedrange: true,
+          range: [0, 1]
         },
         xaxis: {
           autorange: true,
