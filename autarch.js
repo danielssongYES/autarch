@@ -36,8 +36,8 @@ function updateCursor() {
         yref: 'y2',
         x0: window.cursorTime,
         x1: window.cursorTime,
-        y0: yRange2[0] + 0.01,
-        y1: yRange2[1] - 0.01,
+        y0: yRange2[0] + 0.1,
+        y1: yRange2[1] - 0.1,
         line: {
           color: 'rgb(55, 128, 191)',
           width: 3
@@ -54,33 +54,42 @@ $(document).ready(function() {
   var max2;
   var min2;
   var play;
-  var canvas = document.getElementById('canvas');
+  /*var canvas = document.getElementById('canvas');
   var videoCtx = new VideoContext(canvas);
   var videoNode1 = videoCtx.video("video.mp4");
   videoNode1.connect(videoCtx.destination);
   videoNode1.start(0);
-  videoNode1.stop(20);
+  videoNode1.stop(20);*/
   $('#player-controls').submit(function(e) {
     e.preventDefault();
+    var frameRate = 7;
+    var playbackRate = 0.2;
     if(!window.play) {
       window.play = setInterval(function() {
-        window.cursorTime += 66;
+        var video1 = document.getElementById('video1');
+        var video2 = document.getElementById('video2');
+        window.cursorTime += (1000 / frameRate) * playbackRate;
         updateCursor();
-      }, 33);
-      videoCtx.play();
+        //video.fastSeek(video.currentTime + 0.033);
+        video1.currentTime += (1 / frameRate) * playbackRate;
+        video2.currentTime += (1 / frameRate) * playbackRate;
+        //document.getElementById("video2").fastSeek(currentTime / 1000 + 33);
+      }, (1000 / frameRate) * playbackRate);
+      //videoCtx.play();
       $('#play-button').val('Pause');
     }
     else {
       clearInterval(window.play);
       window.play = null;
-      videoCtx.pause();
+      //videoCtx.pause();
       $('#play-button').val('Play');
     }
   });
-	
 
-	
-	window.asyncReady = false;
+  $('video').on('play', function() {
+    this.pause();
+  });
+
   $.ajax({
     url: "http://autarchserver.westeurope.cloudapp.azure.com:4716/AAProvider/GetTags",
     dataType: "jsonp",
@@ -126,12 +135,14 @@ $(document).ready(function() {
       var layout = {
         yaxis: {
           domain: [0, 0.5],
+          autorange: false,
           fixedrange: true,
           range: [min1, max1]
         },
         legend: {traceorder: 'reversed'},
         yaxis2: {
           domain: [0.5, 1],
+          autorange: false,
           fixedrange: true,
           range: [min2, max2]
         },
@@ -148,23 +159,20 @@ $(document).ready(function() {
   });
   var graph = $('#graph');
   graph.on('plotly_afterplot', function() {
-	window.cursorTime = new Date(graph[0]._fullLayout.xaxis.range[0]).getTime();
-	updateCursor();
-	graph.unbind('plotly_afterplot');
+    window.cursorTime = new Date(graph[0]._fullLayout.xaxis.range[0]).getTime();
+    updateCursor();
+    graph.unbind('plotly_afterplot');
   });
   graph.mousedown(function(data) {
     graph.mousemove(function(data) {
       var canvasContainer = $('.gridlayer')[0];
       canvasBounds = canvasContainer.getBoundingClientRect();
       var xAxis = this._fullLayout.xaxis;
-
       var xMin = new Date(xAxis.range[0]).getTime();
       var xMax = new Date(xAxis.range[1]).getTime();
 
       var xScale = (xMax - xMin) / canvasBounds.width;
-
       var xOffset = data.clientX - canvasBounds.left;
-
       var xP2C = Math.round((xOffset * xScale) + xMin);
 
       window.cursorTime = xP2C;
